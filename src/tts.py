@@ -22,10 +22,19 @@ class TextToSpeech:
 
         self.engine.setProperty("rate", self.rate)
         if self.voice:
+            # Try to find the specified voice
+            voice_found = False
             for v in self.engine.getProperty("voices"):
                 if self.voice.lower() in v.name.lower():
                     self.engine.setProperty("voice", v.id)
+                    voice_found = True
+                    logging.info(f"Using voice: {v.name}")
                     break
+            
+            if not voice_found:
+                logging.warning(f"Voice '{self.voice}' not found, using default voice")
+        else:
+            logging.info("No voice specified, using default system voice")
 
         self._is_speaking = False
         logging.info("TextToSpeech initialised (pyttsx3, fallback=%s)", self.fallback_cmd)
@@ -57,18 +66,16 @@ class TextToSpeech:
     def _speak_fallback(self, text: str):
         try:
             # Use specified output device if configured
-            cmd = [self.fallback_cmd, text]
             if self.output_device:
-                # For espeak, we can use -a flag for amplitude or pipe to aplay
-                # For now, we'll use aplay with the specified device
-                cmd = ['aplay', '-D', self.output_device, '-f', 'S16_LE', '-r', '22050', '-c', '1', '-']
-                # Generate audio with espeak and pipe to aplay
+                # Generate audio with espeak and pipe to aplay with specified device
                 espeak_process = subprocess.Popen(['espeak', '-s', '150', '-w', '-'], 
                                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
                 audio_data, _ = espeak_process.communicate(input=text.encode())
-                subprocess.run(cmd, input=audio_data, check=True)
+                subprocess.run(['aplay', '-D', self.output_device, '-f', 'S16_LE', '-r', '22050', '-c', '1', '-'], 
+                             input=audio_data, check=True)
             else:
-                subprocess.run(cmd, check=True)
+                # Use default espeak
+                subprocess.run([self.fallback_cmd, text], check=True)
         except Exception as exc:
             logging.error("Fallback TTS failed: %s", exc)
 
