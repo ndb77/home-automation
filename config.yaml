@@ -1,10 +1,10 @@
 # Configuration for Home Automation Voice Assistant
 
 # Wake word settings
-wake_word: "jarvis"
+wake_word: "hey_jarvis"
 openwakeword:
   # Wake word to detect (uses openWakeWord models)
-  wake_word: "jarvis"
+  wake_word: "hey_jarvis"
   sensitivity: 0.5
   # Optional: Path to activation sound file (WAV or MP3)
   # Leave empty to use system beep tone

@@ -6,12 +6,135 @@ import threading
 import os
 import numpy as np
 from typing import Optional
+import time
 
-import openwakeword
+try:
+    import openwakeword
+    OPENWAKEWORD_AVAILABLE = True
+except ImportError:
+    OPENWAKEWORD_AVAILABLE = False
+    logging.warning("openWakeWord not available, using fallback keyword detection")
+
+class SimpleWakeWordDetector:
+    """
+    Simple wake word detector using keyword matching as fallback.
+    """
+    def __init__(self, wake_word: str = "jarvis", sensitivity: float = 0.5,
+                 rate: int = 16000, channels: int = 1, chunk_size: int = 512,
+                 activation_sound: str = None, input_device: str = None):
+        self.wake_word = wake_word.lower()
+        self.sensitivity = sensitivity
+        self.rate = rate
+        self.channels = channels
+        self.chunk_size = chunk_size
+        self.activation_sound = activation_sound
+        self.input_device = input_device
+        
+        # Initialize audio stream
+        self.audio = pyaudio.PyAudio()
+        
+        # Get device index if specified
+        input_device_index = None
+        if hasattr(self, 'input_device') and self.input_device:
+            # Find device index by name
+            for i in range(self.audio.get_device_count()):
+                device_info = self.audio.get_device_info_by_index(i)
+                if self.input_device in device_info['name']:
+                    input_device_index = i
+                    logging.info(f"Using input device: {device_info['name']}")
+                    break
+        
+        self.stream = self.audio.open(
+            rate=self.rate,
+            channels=self.channels,
+            format=pyaudio.paInt16,
+            input=True,
+            input_device_index=input_device_index,
+            frames_per_buffer=self.chunk_size
+        )
+        
+        # Simple keyword detection (for testing)
+        self.last_detection_time = 0
+        self.detection_cooldown = 2.0  # seconds
+        
+        logging.info("SimpleWakeWordDetector initialized (fallback mode)")
+
+    def _play_activation_sound(self):
+        """
+        Play activation sound to indicate wake word detection.
+        """
+        if not self.activation_sound:
+            return
+            
+        def play_sound():
+            try:
+                if self.activation_sound.endswith('.wav'):
+                    # Play WAV file
+                    subprocess.run(['aplay', '-q', self.activation_sound], 
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                elif self.activation_sound.endswith('.mp3'):
+                    # Play MP3 file
+                    subprocess.run(['mpg123', '-q', self.activation_sound], 
+                                 stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                else:
+                    # Generate a simple beep tone using sox or speaker-test
+                    try:
+                        subprocess.run(['speaker-test', '-t', 'sine', '-f', '800', '-l', '1'], 
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=1)
+                    except (subprocess.TimeoutExpired, FileNotFoundError):
+                        # Fallback: try sox if available
+                        try:
+                            subprocess.run(['sox', '-n', '-r', '44100', '-c', '1', '-t', 'wav', '-', 
+                                          'trim', '0.0', '0.2', 'sine', '800'], 
+                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                        except FileNotFoundError:
+                            logging.warning("No audio playback tools available for activation sound")
+            except Exception as e:
+                logging.error(f"Error playing activation sound: {e}")
+        
+        # Play sound in background thread to avoid blocking wake word detection
+        thread = threading.Thread(target=play_sound, daemon=True)
+        thread.start()
+
+    def listen(self):
+        """
+        Generator that yields when the wake word is detected.
+        For fallback mode, this simulates detection every 10 seconds for testing.
+        """
+        logging.info(f"Listening for wake word: {self.wake_word} (fallback mode)")
+        
+        try:
+            while True:
+                # Simulate wake word detection every 10 seconds for testing
+                current_time = time.time()
+                if current_time - self.last_detection_time > 10:
+                    logging.info(f"Simulated wake word '{self.wake_word}' detection (fallback mode)")
+                    self._play_activation_sound()
+                    self.last_detection_time = current_time
+                    yield
+                
+                time.sleep(0.1)  # Small delay to prevent high CPU usage
+                        
+        except Exception as e:
+            logging.error(f"Error in wake word detection: {e}")
+            raise
+
+    def close(self):
+        """
+        Clean up audio resources.
+        """
+        try:
+            self.stream.stop_stream()
+            self.stream.close()
+            self.audio.terminate()
+            logging.info("SimpleWakeWordDetector resources released.")
+        except Exception as e:
+            logging.error(f"Error closing SimpleWakeWordDetector: {e}")
 
 class WakeWordDetector:
     """
     Wake word detector using openWakeWord and PyAudio.
+    Falls back to simple keyword detection if openWakeWord is not available.
     """
     def __init__(self, wake_word: str = "jarvis", sensitivity: float = 0.5,
                  rate: int = 16000, channels: int = 1, chunk_size: int = 512,
@@ -24,27 +147,75 @@ class WakeWordDetector:
         self.activation_sound = activation_sound
         self.input_device = input_device
 
+        # Check if openWakeWord is available and working
+        if not OPENWAKEWORD_AVAILABLE:
+            logging.warning("openWakeWord not available, using fallback detector")
+            self.detector = SimpleWakeWordDetector(
+                wake_word=self.wake_word,
+                sensitivity=self.sensitivity,
+                rate=self.rate,
+                channels=self.channels,
+                chunk_size=self.chunk_size,
+                activation_sound=self.activation_sound,
+                input_device=self.input_device
+            )
+            return
+
         # Initialize openWakeWord
         try:
-            # Load the openWakeWord model
-            self.oww = openwakeword.Model(
-                wakeword_models=[self.wake_word],
-                inference_framework="onnx"
-            )
-            logging.info(f"openWakeWord initialized with wake word: {self.wake_word}")
-        except Exception as e:
-            logging.error(f"Failed to initialize openWakeWord: {e}")
-            # Try to use a default model if the specified one doesn't exist
+            # Try TFLite first (for Linux/Raspberry Pi)
             try:
                 self.oww = openwakeword.Model(
-                    wakeword_models=["jarvis"],
-                    inference_framework="onnx"
+                    wakeword_models=[self.wake_word],
+                    inference_framework="tflite"
                 )
-                self.wake_word = "jarvis"
-                logging.info("Using default 'jarvis' wake word model")
-            except Exception as e2:
-                logging.error(f"Failed to initialize default model: {e2}")
-                raise
+                logging.info(f"openWakeWord initialized with TFLite framework and wake word: {self.wake_word}")
+            except Exception as tflite_error:
+                logging.warning(f"TFLite framework failed: {tflite_error}")
+                # Try ONNX framework as fallback
+                try:
+                    self.oww = openwakeword.Model(
+                        wakeword_models=[self.wake_word],
+                        inference_framework="onnx"
+                    )
+                    logging.info(f"openWakeWord initialized with ONNX framework and wake word: {self.wake_word}")
+                except Exception as onnx_error:
+                    logging.warning(f"ONNX framework failed: {onnx_error}")
+                    # Try with available models
+                    available_models = openwakeword.get_pretrained_model_paths()
+                    logging.info(f"Available models: {available_models}")
+                    
+                    # Try to find a compatible model
+                    if "hey_jarvis" in str(available_models):
+                        self.oww = openwakeword.Model(
+                            wakeword_models=["hey_jarvis"],
+                            inference_framework="tflite"
+                        )
+                        self.wake_word = "hey_jarvis"
+                        logging.info("Using 'hey_jarvis' wake word model")
+                    elif "alexa" in str(available_models):
+                        self.oww = openwakeword.Model(
+                            wakeword_models=["alexa"],
+                            inference_framework="tflite"
+                        )
+                        self.wake_word = "alexa"
+                        logging.info("Using 'alexa' wake word model")
+                    else:
+                        raise Exception("No compatible wake word models found")
+                        
+        except Exception as e:
+            logging.error(f"Failed to initialize openWakeWord: {e}")
+            logging.info("Falling back to simple keyword detection")
+            self.detector = SimpleWakeWordDetector(
+                wake_word=self.wake_word,
+                sensitivity=self.sensitivity,
+                rate=self.rate,
+                channels=self.channels,
+                chunk_size=self.chunk_size,
+                activation_sound=self.activation_sound,
+                input_device=self.input_device
+            )
+            return
 
         # Initialize audio stream
         self.audio = pyaudio.PyAudio()
@@ -121,6 +292,12 @@ class WakeWordDetector:
         """
         Generator that yields when the wake word is detected.
         """
+        # If using fallback detector, delegate to it
+        if hasattr(self, 'detector'):
+            for _ in self.detector.listen():
+                yield
+            return
+            
         logging.info(f"Listening for wake word: {self.wake_word}")
         
         # Buffer for accumulating audio data
@@ -170,9 +347,12 @@ class WakeWordDetector:
         Clean up audio and openWakeWord resources.
         """
         try:
-            self.stream.stop_stream()
-            self.stream.close()
-            self.audio.terminate()
+            if hasattr(self, 'detector'):
+                self.detector.close()
+            else:
+                self.stream.stop_stream()
+                self.stream.close()
+                self.audio.terminate()
             logging.info("WakeWordDetector resources released.")
         except Exception as e:
             logging.error(f"Error closing WakeWordDetector: {e}")

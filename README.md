@@ -68,7 +68,7 @@ python -c "import openwakeword; print('openWakeWord installed successfully')"
 #### Available Wake Words
 
 openWakeWord comes with many pre-trained wake words including:
-- `jarvis` (default)
+- `hey_jarvis` (default)
 - `alexa`
 - `hey_google`
 - `hey_siri`
@@ -76,6 +76,12 @@ openWakeWord comes with many pre-trained wake words including:
 - And many more...
 
 To change the wake word, simply update the `wake_word` setting in `config.yaml`.
+
+#### Windows Compatibility
+
+**Important for Windows Users**: The openWakeWord library requires TFLite runtime which is not available on Windows. The system automatically falls back to a simple keyword detection mode that simulates wake word detection every 10 seconds for testing purposes.
+
+For full wake word detection functionality, use this system on Linux (Raspberry Pi) where TFLite runtime is available.
 
 ### 4. Configure the System
 
@@ -275,11 +281,13 @@ recording:
    ```
 
 2. **openWakeWord Not Working**
-   - Verify wake word name in config.yaml (e.g., "jarvis", "alexa")
+   - Verify wake word name in config.yaml (e.g., "hey_jarvis", "alexa")
    - Test with different sensitivity values (0.3-0.8)
    - Ensure activation sound file exists (if specified)
    - Try a different wake word: "alexa", "hey_google", "computer"
    - Check if ONNX runtime is installed: `pip install onnxruntime`
+   - **Windows Users**: TFLite runtime is not available on Windows. The system will automatically fall back to a simple detection mode that simulates wake word detection every 10 seconds for testing.
+   - **Raspberry Pi Users**: For full functionality, install TFLite runtime: `pip install tflite-runtime`
 
 3. **Ollama Connection Issues**
    - Verify Windows machine IP address
