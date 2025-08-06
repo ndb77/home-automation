@@ -44,14 +44,43 @@ class SimpleWakeWordDetector:
                     logging.info(f"Using input device: {device_info['name']}")
                     break
         
-        self.stream = self.audio.open(
-            rate=self.rate,
-            channels=self.channels,
-            format=pyaudio.paInt16,
-            input=True,
-            input_device_index=input_device_index,
-            frames_per_buffer=self.chunk_size
-        )
+        # Try to open audio stream with error handling
+        try:
+            self.stream = self.audio.open(
+                rate=self.rate,
+                channels=self.channels,
+                format=pyaudio.paInt16,
+                input=True,
+                input_device_index=input_device_index,
+                frames_per_buffer=self.chunk_size
+            )
+        except Exception as e:
+            logging.error(f"Failed to open audio stream with device {input_device_index}: {e}")
+            # Try with default device and no specific device
+            logging.info("Trying with default audio device...")
+            try:
+                self.stream = self.audio.open(
+                    rate=self.rate,
+                    channels=self.channels,
+                    format=pyaudio.paInt16,
+                    input=True,
+                    frames_per_buffer=self.chunk_size
+                )
+            except Exception as e2:
+                logging.error(f"Failed to open default audio device: {e2}")
+                # Try with 44.1kHz as fallback
+                if self.rate != 44100:
+                    logging.info("Trying with 44.1kHz sample rate...")
+                    self.rate = 44100
+                    self.stream = self.audio.open(
+                        rate=self.rate,
+                        channels=self.channels,
+                        format=pyaudio.paInt16,
+                        input=True,
+                        frames_per_buffer=self.chunk_size
+                    )
+                else:
+                    raise
         
         # Simple keyword detection (for testing)
         self.last_detection_time = 0
@@ -231,14 +260,44 @@ class WakeWordDetector:
                     logging.info(f"Using input device: {device_info['name']}")
                     break
         
-        self.stream = self.audio.open(
-            rate=self.rate,
-            channels=self.channels,
-            format=pyaudio.paInt16,
-            input=True,
-            input_device_index=input_device_index,
-            frames_per_buffer=self.chunk_size
-        )
+        # Try to open audio stream with error handling
+        try:
+            self.stream = self.audio.open(
+                rate=self.rate,
+                channels=self.channels,
+                format=pyaudio.paInt16,
+                input=True,
+                input_device_index=input_device_index,
+                frames_per_buffer=self.chunk_size
+            )
+        except Exception as e:
+            logging.error(f"Failed to open audio stream with device {input_device_index}: {e}")
+            # Try with default device and no specific device
+            logging.info("Trying with default audio device...")
+            try:
+                self.stream = self.audio.open(
+                    rate=self.rate,
+                    channels=self.channels,
+                    format=pyaudio.paInt16,
+                    input=True,
+                    frames_per_buffer=self.chunk_size
+                )
+            except Exception as e2:
+                logging.error(f"Failed to open default audio device: {e2}")
+                # Try with 44.1kHz as fallback
+                if self.rate != 44100:
+                    logging.info("Trying with 44.1kHz sample rate...")
+                    self.rate = 44100
+                    self.stream = self.audio.open(
+                        rate=self.rate,
+                        channels=self.channels,
+                        format=pyaudio.paInt16,
+                        input=True,
+                        frames_per_buffer=self.chunk_size
+                    )
+                else:
+                    raise
+        
         logging.info("WakeWordDetector initialized.")
 
     def _play_activation_sound(self):

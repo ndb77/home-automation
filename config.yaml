@@ -17,9 +17,9 @@ openwakeword:
 
 # Audio recording settings
 recording:
-  rate: 16000        # Sampling rate (Hz)
+  rate: 48000        # Sampling rate (Hz) - Use 48kHz which your USB mic supports
   channels: 1        # Mono audio
-  chunk_size: 512    # Frame size for wake word detection
+  chunk_size: 1024   # Frame size for wake word detection (larger for stability)
   format: "int16"    # Audio sample format
   # Audio device settings (optional - leave empty for default)
   input_device: "hw:4,0"   # USB Lavalier Mic Pro (card 4, device 0)
