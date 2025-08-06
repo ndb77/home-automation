@@ -99,7 +99,7 @@ class SimpleWakeWordDetector:
             try:
                 if self.activation_sound.endswith('.wav'):
                     # Play WAV file
-                    subprocess.run(['aplay', '-q', self.activation_sound], 
+                    subprocess.run(['aplay', '-D', 'plughw:3,0', '-q', self.activation_sound], 
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 elif self.activation_sound.endswith('.mp3'):
                     # Play MP3 file
@@ -320,7 +320,7 @@ class WakeWordDetector:
             try:
                 if self.activation_sound.endswith('.wav'):
                     # Play WAV file
-                    subprocess.run(['aplay', '-q', self.activation_sound], 
+                    subprocess.run(['aplay', '-D', 'plughw:3,0', '-q', self.activation_sound], 
                                  stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                 elif self.activation_sound.endswith('.mp3'):
                     # Play MP3 file

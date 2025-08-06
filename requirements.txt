@@ -4,7 +4,9 @@ requests==2.31.0
 python-dotenv==1.0.0
 
 # Voice assistant stack – keep Pi-friendly versions
+numpy<2.0  # Required for openWakeWord compatibility
 openwakeword==0.6.0  # Open-source wake word detection (no access key required)
+tflite-runtime<3.0  # TensorFlow Lite runtime for wake word detection
 pyaudio==0.2.11
 openai-whisper==20230314
 pyttsx3==2.90
