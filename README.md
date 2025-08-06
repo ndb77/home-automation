@@ -121,6 +121,11 @@ porcupine:
   # Optional: Custom activation sound (WAV or MP3 file)
   # Leave empty for default beep tone
   activation_sound: ""
+  # Startup sound settings
+  startup_sound:
+    enabled: true
+    frequency: 1000  # Hz (higher pitch than activation sound)
+    duration: 1      # seconds
 ```
 
 ### 5. Setup Music Directory
@@ -144,7 +149,8 @@ python main.py
 
 ### Voice Commands
 
-- **Wake Word**: Say "Jarvis" to activate (you'll hear a beep tone)
+- **Startup**: System plays a high-pitched beep when ready to listen
+- **Wake Word**: Say "Jarvis" to activate (you'll hear a lower-pitched beep tone)
 - **General Questions**: Ask anything after the wake word
 - **Music Commands**: 
   - "Play music [song name]"

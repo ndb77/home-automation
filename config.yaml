@@ -1,0 +1,48 @@
+# Configuration for Home Automation Voice Assistant
+
+# Wake word settings
+wake_word: "Jarvis"
+porcupine:
+  # Path to Porcupine keyword file for your wake word (e.g., Jarvis.ppn)
+  keyword_path: "/home/pi/porcupine/keywords/jarvis_linux.ppn"
+  sensitivity: 0.5
+  # Optional: Path to activation sound file (WAV or MP3)
+  # Leave empty to use system beep tone
+  activation_sound: ""
+  # Startup sound settings
+  startup_sound:
+    enabled: true
+    frequency: 1000  # Hz (higher pitch than activation sound)
+    duration: 1      # seconds
+
+# Audio recording settings
+recording:
+  rate: 16000        # Sampling rate (Hz)
+  channels: 1        # Mono audio
+  chunk_size: 512    # Frame size for wake word detection
+  format: "int16"  # Audio sample format
+
+# Whisper STT settings
+whisper:
+  model: "base"    # Whisper model: tiny, base, small, medium, large
+
+# Ollama LLM server settings (Windows machine)
+ollama:
+  host: "192.168.1.100"  # Replace with your Windows machine IP
+  port: 11434             # Ollama serve port
+  endpoint: "/api/chat"  # API endpoint path
+
+# Text-to-speech settings
+tts:
+  engine: "pyttsx3"   # pyttsx3 or edge-tts
+  voice: null           # Default system voice, or specify by name
+  rate: 150             # Speech rate
+
+# Music playback settings
+music:
+  directory: "/home/pi/music"  # Folder containing local music files
+  player: "mpg123"             # Command-line music player
+
+# Debug and logging
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL

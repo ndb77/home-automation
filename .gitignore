@@ -318,7 +318,6 @@ typings/
 .vscode-test
 
 # Home Automation specific
-config.yaml
 secrets.yaml
 *.key
 *.pem

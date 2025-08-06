@@ -68,6 +68,9 @@ class VoiceAssistant:
 
         self.running = False
         logging.info("VoiceAssistant initialised – ready for wake word")
+        
+        # Play startup sound to indicate system is ready
+        self._play_startup_sound()
 
     # ------------------------------------------------------------------
     # Command processing helpers
@@ -152,6 +155,24 @@ class VoiceAssistant:
             logging.info("KeyboardInterrupt – shutting down assistant")
         finally:
             self.stop()
+
+    def _play_startup_sound(self):
+        """Play startup sound to indicate system is ready."""
+        startup_config = self.config.get('porcupine', {}).get('startup_sound', {})
+        if not startup_config.get('enabled', True):
+            return
+            
+        try:
+            import subprocess
+            frequency = startup_config.get('frequency', 1000)
+            duration = startup_config.get('duration', 1)
+            
+            # Generate a startup beep (higher pitch than activation sound)
+            subprocess.run(['speaker-test', '-t', 'sine', '-f', str(frequency), '-l', str(duration)], 
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=duration + 1)
+            logging.info(f"Startup sound played ({frequency}Hz, {duration}s)")
+        except Exception as e:
+            logging.warning(f"Could not play startup sound: {e}")
 
     def stop(self):
         self.running = False
