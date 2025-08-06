@@ -40,12 +40,14 @@ class VoiceAssistant:
             channels=cfg["recording"]["channels"],
             chunk_size=cfg["recording"]["chunk_size"],
             activation_sound=cfg["porcupine"].get("activation_sound", ""),
+            input_device=cfg["recording"].get("input_device", ""),
         )
 
         self.stt = SpeechToText(
             model_name=cfg["whisper"]["model"],
             rate=cfg["recording"]["rate"],
             channels=cfg["recording"]["channels"],
+            input_device=cfg["recording"].get("input_device", ""),
         )
 
         # Allow env-variable override so user doesn’t edit YAML on each Pi
@@ -59,11 +61,13 @@ class VoiceAssistant:
         self.tts = TextToSpeech(
             voice=cfg["tts"].get("voice"),
             rate=cfg["tts"].get("rate", 150),
+            output_device=cfg["recording"].get("output_device", ""),
         )
 
         self.music_player = MusicPlayer(
             music_directory=cfg["music"]["directory"],
             player_command=cfg["music"].get("player", "mpg123"),
+            output_device=cfg["recording"].get("output_device", ""),
         )
 
         self.running = False

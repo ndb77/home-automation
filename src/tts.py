@@ -13,11 +13,12 @@ class TextToSpeech:
     usually pre-installed or available via `apt install espeak`.
     """
 
-    def __init__(self, voice: Optional[str] = None, rate: int = 150, fallback_cmd: str = "espeak"):
+    def __init__(self, voice: Optional[str] = None, rate: int = 150, fallback_cmd: str = "espeak", output_device: str = None):
         self.engine = pyttsx3.init()
         self.voice = voice
         self.rate = rate
         self.fallback_cmd = fallback_cmd
+        self.output_device = output_device
 
         self.engine.setProperty("rate", self.rate)
         if self.voice:
@@ -55,7 +56,19 @@ class TextToSpeech:
 
     def _speak_fallback(self, text: str):
         try:
-            subprocess.run([self.fallback_cmd, text], check=True)
+            # Use specified output device if configured
+            cmd = [self.fallback_cmd, text]
+            if self.output_device:
+                # For espeak, we can use -a flag for amplitude or pipe to aplay
+                # For now, we'll use aplay with the specified device
+                cmd = ['aplay', '-D', self.output_device, '-f', 'S16_LE', '-r', '22050', '-c', '1', '-']
+                # Generate audio with espeak and pipe to aplay
+                espeak_process = subprocess.Popen(['espeak', '-s', '150', '-w', '-'], 
+                                                stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+                audio_data, _ = espeak_process.communicate(input=text.encode())
+                subprocess.run(cmd, input=audio_data, check=True)
+            else:
+                subprocess.run(cmd, check=True)
         except Exception as exc:
             logging.error("Fallback TTS failed: %s", exc)
 

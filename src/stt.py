@@ -14,10 +14,11 @@ class SpeechToText:
     setup on Raspberry Pi (no extra VAD dependency – energy based silence
     detection only)."""
 
-    def __init__(self, model_name: str = "base", rate: int = 16_000, channels: int = 1):
+    def __init__(self, model_name: str = "base", rate: int = 16_000, channels: int = 1, input_device: str = None):
         self.model_name = model_name
         self.rate = rate
         self.channels = channels
+        self.input_device = input_device
 
         # Load Whisper model (first call will download weights)
         self.model = whisper.load_model(self.model_name)
@@ -44,11 +45,22 @@ class SpeechToText:
         wav_tmp.close()  # we will write later via wave module
 
         try:
+            # Get device index if specified
+            input_device_index = None
+            if self.input_device:
+                for i in range(audio.get_device_count()):
+                    device_info = audio.get_device_info_by_index(i)
+                    if self.input_device in device_info['name']:
+                        input_device_index = i
+                        logging.info(f"Using input device: {device_info['name']}")
+                        break
+            
             stream = audio.open(
                 format=pyaudio.paInt16,
                 channels=self.channels,
                 rate=self.rate,
                 input=True,
+                input_device_index=input_device_index,
                 frames_per_buffer=chunk,
             )
             logging.info("Listening… (max %.1f s)", max_duration)

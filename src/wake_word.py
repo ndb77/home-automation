@@ -12,13 +12,14 @@ class WakeWordDetector:
     """
     def __init__(self, keyword_path: str, sensitivity: float,
                  rate: int = 16000, channels: int = 1, chunk_size: int = 512,
-                 activation_sound: str = None):
+                 activation_sound: str = None, input_device: str = None):
         self.keyword_path = keyword_path
         self.sensitivity = sensitivity
         self.rate = rate
         self.channels = channels
         self.chunk_size = chunk_size
         self.activation_sound = activation_sound
+        self.input_device = input_device
 
         # Initialize Porcupine
         self.porcupine = pvporcupine.create(
@@ -27,11 +28,24 @@ class WakeWordDetector:
         )
         # Initialize audio stream
         self.audio = pyaudio.PyAudio()
+        
+        # Get device index if specified
+        input_device_index = None
+        if hasattr(self, 'input_device') and self.input_device:
+            # Find device index by name
+            for i in range(self.audio.get_device_count()):
+                device_info = self.audio.get_device_info_by_index(i)
+                if self.input_device in device_info['name']:
+                    input_device_index = i
+                    logging.info(f"Using input device: {device_info['name']}")
+                    break
+        
         self.stream = self.audio.open(
             rate=self.rate,
             channels=self.channels,
             format=pyaudio.paInt16,
             input=True,
+            input_device_index=input_device_index,
             frames_per_buffer=self.chunk_size
         )
         logging.info("WakeWordDetector initialized.")

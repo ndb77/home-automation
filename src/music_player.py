@@ -9,9 +9,10 @@ class MusicPlayer:
     """
     Music player for local music files using mpg123.
     """
-    def __init__(self, music_directory: str, player_command: str = "mpg123"):
+    def __init__(self, music_directory: str, player_command: str = "mpg123", output_device: str = None):
         self.music_directory = music_directory
         self.player_command = player_command
+        self.output_device = output_device
         self.current_process: Optional[subprocess.Popen] = None
         self.is_playing = False
         self.current_track = None
@@ -56,8 +57,15 @@ class MusicPlayer:
         
         try:
             logging.info(f"Playing song: {song_name}")
+            
+            # Build command with output device if specified
+            cmd = [self.player_command]
+            if self.output_device:
+                cmd.extend(['-a', self.output_device])  # mpg123 audio device option
+            cmd.append(song_path)
+            
             self.current_process = subprocess.Popen(
-                [self.player_command, song_path],
+                cmd,
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL
             )

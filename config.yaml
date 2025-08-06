@@ -20,7 +20,10 @@ recording:
   rate: 16000        # Sampling rate (Hz)
   channels: 1        # Mono audio
   chunk_size: 512    # Frame size for wake word detection
-  format: "int16"  # Audio sample format
+  format: "int16"    # Audio sample format
+  # Audio device settings (optional - leave empty for default)
+  input_device: "hw:4,0"   # USB Lavalier Mic Pro (card 4, device 0)
+  output_device: "hw:3,0"  # USB PnP Audio Device (card 3, device 0)
 
 # Whisper STT settings
 whisper:
@@ -28,7 +31,7 @@ whisper:
 
 # Ollama LLM server settings (Windows machine)
 ollama:
-  host: "192.168.1.100"  # Replace with your Windows machine IP
+  host: "192.168.1.148"  # Replace with your Windows machine IP
   port: 11434             # Ollama serve port
   endpoint: "/api/chat"  # API endpoint path
 

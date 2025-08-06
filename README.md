@@ -223,6 +223,58 @@ The `config.yaml` file contains all system parameters:
 - **TTS**: Text-to-speech engine settings
 - **Music**: Player and directory configuration
 
+## 🎤 Audio Setup
+
+The system supports custom audio input and output devices. Configure your devices in `config.yaml`:
+
+```yaml
+recording:
+  input_device: "hw:4,0"   # Your USB microphone
+  output_device: "hw:3,0"  # Your USB audio output device
+```
+
+### Audio Device Configuration
+
+1. **Find your devices**:
+   ```bash
+   arecord -l  # List recording devices
+   aplay -l    # List playback devices
+   ```
+
+2. **Run the comprehensive audio test**:
+   ```bash
+   # Make the test script executable
+   chmod +x scripts/test_audio.py
+   
+   # Run the audio test suite
+   python scripts/test_audio.py
+   ```
+
+3. **Manual testing** (if needed):
+   ```bash
+   # Test microphone recording
+   arecord -D hw:4,0 -f S16_LE -r 16000 -c 1 -d 5 test.wav
+   aplay test.wav
+   rm test.wav
+   
+   # Test audio output
+   speaker-test -D hw:3,0 -t sine -f 1000 -l 2
+   ```
+
+### Device Examples
+
+- **USB Microphone**: `hw:4,0` (card 4, device 0)
+- **USB Audio Output**: `hw:3,0` (card 3, device 0)
+- **Built-in Audio**: `hw:0,0` (card 0, device 0)
+- **HDMI Audio**: `hw:1,0` or `hw:2,0`
+
+### Audio Troubleshooting
+
+- **No sound**: Check output device configuration and volume levels
+- **No microphone**: Verify input device and permissions
+- **Echo/feedback**: Use separate input and output devices
+- **Poor quality**: Adjust sample rate and chunk size in config.yaml
+
 ## Troubleshooting
 
 ### Common Issues
@@ -233,8 +285,17 @@ The `config.yaml` file contains all system parameters:
    aplay -l
    arecord -l
    
-   # Test microphone
-   arecord -D hw:1,0 -f S16_LE -r 16000 -c 1 test.wav
+   # Run comprehensive audio test
+   chmod +x scripts/test_audio.py
+   python scripts/test_audio.py
+   
+   # Manual microphone test
+   arecord -D hw:4,0 -f S16_LE -r 16000 -c 1 test.wav
+   aplay test.wav
+   rm test.wav
+   
+   # Manual audio output test
+   speaker-test -D hw:3,0 -t sine -f 1000 -l 2
    ```
 
 2. **Porcupine Not Working**
