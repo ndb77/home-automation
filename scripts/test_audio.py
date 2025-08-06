@@ -96,7 +96,7 @@ def test_microphone_recording(input_device="hw:4,0", duration=3):
     except Exception as e:
         print(f"❌ Recording error: {e}")
 
-def test_audio_output(output_device="hw:3,0"):
+def test_audio_output(output_device="plughw:3,0"):
     """Test audio output"""
     print_header("AUDIO OUTPUT TEST")
     
@@ -119,7 +119,7 @@ def test_audio_output(output_device="hw:3,0"):
     except Exception as e:
         print(f"❌ Audio output error: {e}")
 
-def test_tts_output(output_device="hw:3,0"):
+def test_tts_output(output_device="plughw:3,0"):
     """Test text-to-speech output"""
     print_header("TEXT-TO-SPEECH TEST")
     
@@ -145,7 +145,7 @@ def test_tts_output(output_device="hw:3,0"):
     except Exception as e:
         print(f"❌ TTS test failed: {e}")
 
-def test_music_playback(output_device="hw:3,0"):
+def test_music_playback(output_device="plughw:3,0"):
     """Test music playback"""
     print_header("MUSIC PLAYBACK TEST")
     
@@ -199,9 +199,9 @@ def main():
     if not input_device:
         input_device = "hw:4,0"
     
-    output_device = input("Enter output device (e.g., hw:3,0) or press Enter for default: ").strip()
+    output_device = input("Enter output device (e.g., plughw:3,0) or press Enter for default: ").strip()
     if not output_device:
-        output_device = "hw:3,0"
+        output_device = "plughw:3,0"
     
     print(f"\nUsing devices:")
     print(f"  Input:  {input_device}")

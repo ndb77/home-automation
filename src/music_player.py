@@ -61,6 +61,8 @@ class MusicPlayer:
             # Build command with output device if specified
             cmd = [self.player_command]
             if self.output_device:
+                # For plughw: devices, we'll use the device as-is with mpg123
+                # The plug layer should handle format conversion automatically
                 cmd.extend(['-a', self.output_device])  # mpg123 audio device option
             cmd.append(song_path)
             

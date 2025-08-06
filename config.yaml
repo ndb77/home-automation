@@ -23,7 +23,7 @@ recording:
   format: "int16"    # Audio sample format
   # Audio device settings (optional - leave empty for default)
   input_device: "hw:4,0"   # USB Lavalier Mic Pro (card 4, device 0)
-  output_device: "hw:3,0"  # USB PnP Audio Device (card 3, device 0)
+  output_device: "plughw:3,0"  # USB PnP Audio Device (card 3, device 0) - uses plug layer
 
 # Whisper STT settings
 whisper:
