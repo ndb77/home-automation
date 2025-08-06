@@ -192,6 +192,15 @@ class WakeWordDetector:
 
         # Initialize openWakeWord
         try:
+            # Download models if they don't exist
+            try:
+                logging.info("Downloading openWakeWord models...")
+                openwakeword.utils.download_models()
+                logging.info("Models downloaded successfully")
+            except Exception as download_error:
+                logging.warning(f"Model download failed: {download_error}")
+                # Continue anyway, the Model class might handle missing models gracefully
+            
             # Try TFLite first (for Linux/Raspberry Pi)
             try:
                 self.oww = openwakeword.Model(
