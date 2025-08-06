@@ -1,14 +1,16 @@
 # Core dependencies
 pyyaml==6.0.1
 requests==2.31.0
-schedule==1.2.0
 python-dotenv==1.0.0
 
 # Voice assistant stack – keep Pi-friendly versions
-pvporcupine==1.9.0
+openwakeword==0.6.0  # Open-source wake word detection (no access key required)
 pyaudio==0.2.11
 openai-whisper==20230314
 pyttsx3==2.90
+
+# Audio processing (required by Whisper)
+numpy==1.24.3
 
 # Optional (comment out to slim install)
 mpg123==0.0.0  # placeholder for python wrapper if needed
@@ -16,3 +18,6 @@ mpg123==0.0.0  # placeholder for python wrapper if needed
 # Utilities & development (can be removed for prod)
 colorama==0.4.6
 tqdm==4.64.0
+
+# System dependencies (install with apt on Raspberry Pi):
+# sudo apt install -y python3-pip python3-venv portaudio19-dev mpg123 wget sox espeak

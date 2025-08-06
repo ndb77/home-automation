@@ -1,19 +1,22 @@
 import logging
-import pvporcupine
 import pyaudio
 import struct
 import subprocess
 import threading
 import os
+import numpy as np
+from typing import Optional
+
+import openwakeword
 
 class WakeWordDetector:
     """
-    Wake word detector using Porcupine and PyAudio.
+    Wake word detector using openWakeWord and PyAudio.
     """
-    def __init__(self, keyword_path: str, sensitivity: float,
+    def __init__(self, wake_word: str = "jarvis", sensitivity: float = 0.5,
                  rate: int = 16000, channels: int = 1, chunk_size: int = 512,
                  activation_sound: str = None, input_device: str = None):
-        self.keyword_path = keyword_path
+        self.wake_word = wake_word.lower()
         self.sensitivity = sensitivity
         self.rate = rate
         self.channels = channels
@@ -21,11 +24,28 @@ class WakeWordDetector:
         self.activation_sound = activation_sound
         self.input_device = input_device
 
-        # Initialize Porcupine
-        self.porcupine = pvporcupine.create(
-            keyword_paths=[self.keyword_path],
-            sensitivities=[self.sensitivity]
-        )
+        # Initialize openWakeWord
+        try:
+            # Load the openWakeWord model
+            self.oww = openwakeword.Model(
+                wakeword_models=[self.wake_word],
+                inference_framework="onnx"
+            )
+            logging.info(f"openWakeWord initialized with wake word: {self.wake_word}")
+        except Exception as e:
+            logging.error(f"Failed to initialize openWakeWord: {e}")
+            # Try to use a default model if the specified one doesn't exist
+            try:
+                self.oww = openwakeword.Model(
+                    wakeword_models=["jarvis"],
+                    inference_framework="onnx"
+                )
+                self.wake_word = "jarvis"
+                logging.info("Using default 'jarvis' wake word model")
+            except Exception as e2:
+                logging.error(f"Failed to initialize default model: {e2}")
+                raise
+
         # Initialize audio stream
         self.audio = pyaudio.PyAudio()
         
@@ -87,39 +107,72 @@ class WakeWordDetector:
         thread = threading.Thread(target=play_sound, daemon=True)
         thread.start()
 
+    def _audio_to_numpy(self, audio_data: bytes) -> np.ndarray:
+        """
+        Convert PyAudio audio data to numpy array.
+        """
+        # Convert bytes to 16-bit integers
+        audio_int16 = struct.unpack(f"{len(audio_data)//2}h", audio_data)
+        # Convert to float32 and normalize
+        audio_float32 = np.array(audio_int16, dtype=np.float32) / 32768.0
+        return audio_float32
+
     def listen(self):
         """
         Generator that yields when the wake word is detected.
         """
-        logging.info("Listening for wake word...")
+        logging.info(f"Listening for wake word: {self.wake_word}")
+        
+        # Buffer for accumulating audio data
+        audio_buffer = np.array([], dtype=np.float32)
+        buffer_size = int(self.rate * 0.5)  # 500ms buffer
+        
         try:
             while True:
                 # Read raw audio
                 pcm = self.stream.read(self.chunk_size, exception_on_overflow=False)
-                # Unpack to signed 16-bit little endian samples
-                pcm_unpacked = struct.unpack_from(
-                    "h" * self.chunk_size, pcm
-                )
-                # Process with Porcupine
-                result = self.porcupine.process(pcm_unpacked)
-                if result >= 0:
-                    logging.info("Wake word detected!")
-                    # Play activation sound
-                    self._play_activation_sound()
-                    yield
+                
+                # Convert to numpy array
+                audio_chunk = self._audio_to_numpy(pcm)
+                
+                # Add to buffer
+                audio_buffer = np.concatenate([audio_buffer, audio_chunk])
+                
+                # Keep only the last buffer_size samples
+                if len(audio_buffer) > buffer_size:
+                    audio_buffer = audio_buffer[-buffer_size:]
+                
+                # Process with openWakeWord when we have enough data
+                if len(audio_buffer) >= buffer_size:
+                    try:
+                        # Predict wake word
+                        prediction = self.oww.predict(audio_buffer)
+                        
+                        # Check if wake word was detected
+                        if prediction[self.wake_word] > self.sensitivity:
+                            logging.info(f"Wake word '{self.wake_word}' detected! Confidence: {prediction[self.wake_word]:.3f}")
+                            # Play activation sound
+                            self._play_activation_sound()
+                            # Clear buffer to avoid multiple detections
+                            audio_buffer = np.array([], dtype=np.float32)
+                            yield
+                            
+                    except Exception as e:
+                        logging.error(f"Error in wake word prediction: {e}")
+                        continue
+                        
         except Exception as e:
             logging.error(f"Error in wake word detection: {e}")
             raise
 
     def close(self):
         """
-        Clean up audio and Porcupine resources.
+        Clean up audio and openWakeWord resources.
         """
         try:
             self.stream.stop_stream()
             self.stream.close()
             self.audio.terminate()
-            self.porcupine.delete()
             logging.info("WakeWordDetector resources released.")
         except Exception as e:
             logging.error(f"Error closing WakeWordDetector: {e}")

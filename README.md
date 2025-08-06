@@ -4,7 +4,7 @@ A comprehensive voice-controlled home assistant built for Raspberry Pi that uses
 
 ## Features
 
-- **Wake Word Detection**: Uses Porcupine for reliable "Jarvis" wake word detection
+- **Wake Word Detection**: Uses openWakeWord for reliable "Jarvis" wake word detection
 - **Speech-to-Text**: Whisper-based transcription for accurate voice recognition
 - **Local LLM Integration**: Connects to Ollama server running on Windows desktop
 - **Text-to-Speech**: Natural voice responses using pyttsx3
@@ -48,59 +48,34 @@ source venv/bin/activate
 # Install Python dependencies
 pip install -r requirements.txt
 
-# Run Porcupine setup script (optional but recommended)
-chmod +x scripts/setup_porcupine.sh
-./scripts/setup_porcupine.sh
+# Run openWakeWord setup script (optional but recommended)
+chmod +x scripts/setup_openwakeword.sh
+./scripts/setup_openwakeword.sh
 ```
 
-### 3. Install Porcupine and Download Wake Word
+### 3. Install openWakeWord
 
-#### Option A: Using pip (Recommended)
+openWakeWord is included in requirements.txt and will be installed automatically. It provides pre-trained wake word models that work out of the box.
+
 ```bash
-# Porcupine is already included in requirements.txt
-# It will be installed when you run: pip install -r requirements.txt
+# Install dependencies (including openWakeWord)
+pip install -r requirements.txt
+
+# Test the installation
+python -c "import openwakeword; print('openWakeWord installed successfully')"
 ```
 
-#### Option B: Manual Installation
-```bash
-# Install Porcupine Python package
-pip install pvporcupine
+#### Available Wake Words
 
-# Or install specific version for Raspberry Pi
-pip install pvporcupine==1.9.0
-```
+openWakeWord comes with many pre-trained wake words including:
+- `jarvis` (default)
+- `alexa`
+- `hey_google`
+- `hey_siri`
+- `computer`
+- And many more...
 
-#### Get the Wake Word File (.ppn)
-
-1. **Go to Picovoice Console**: https://console.picovoice.ai/
-2. **Sign up/Login** (free account)
-3. **Create a new wake word**:
-   - Click "Create Wake Word"
-   - Name it "Jarvis" 
-   - Record or upload audio saying "Jarvis" clearly
-   - Select "Linux ARM" platform
-   - Download the `.ppn` file
-
-4. **Place the file**:
-```bash
-# Create directory
-mkdir -p ~/porcupine/keywords
-
-# Copy your downloaded file (replace with actual path)
-cp ~/Downloads/jarvis_linux.ppn ~/porcupine/keywords/
-
-# Verify the file exists
-ls -la ~/porcupine/keywords/
-```
-
-#### Alternative: Use Built-in Wake Words
-If you don't want to create a custom wake word, you can use Picovoice's built-in ones:
-```bash
-# Download a built-in wake word (e.g., "Picovoice")
-wget https://github.com/Picovoice/porcupine/raw/master/resources/keyword_files/linux/arm/picovoice_linux.ppn -O ~/porcupine/keywords/picovoice_linux.ppn
-
-# Then update config.yaml to use "Picovoice" instead of "Jarvis"
-```
+To change the wake word, simply update the `wake_word` setting in `config.yaml`.
 
 ### 4. Configure the System
 
@@ -116,7 +91,8 @@ music:
   directory: "/home/pi/music"
 
 # Adjust wake word sensitivity if needed
-porcupine:
+openwakeword:
+  wake_word: "jarvis"
   sensitivity: 0.5
   # Optional: Custom activation sound (WAV or MP3 file)
   # Leave empty for default beep tone
@@ -298,13 +274,12 @@ recording:
    speaker-test -D hw:3,0 -t sine -f 1000 -l 2
    ```
 
-2. **Porcupine Not Working**
-   - Verify wake word file path in config.yaml
-   - Check file permissions: `chmod 644 ~/porcupine/keywords/*.ppn`
+2. **openWakeWord Not Working**
+   - Verify wake word name in config.yaml (e.g., "jarvis", "alexa")
    - Test with different sensitivity values (0.3-0.8)
    - Ensure activation sound file exists (if specified)
-   - Verify you downloaded the correct platform (Linux ARM for Pi)
-   - Try a built-in wake word first: `picovoice_linux.ppn`
+   - Try a different wake word: "alexa", "hey_google", "computer"
+   - Check if ONNX runtime is installed: `pip install onnxruntime`
 
 3. **Ollama Connection Issues**
    - Verify Windows machine IP address
@@ -332,7 +307,7 @@ sudo journalctl -u voice-assistant -f
 
 ```bash
 # Test wake word detection
-python -c "from src.wake_word import WakeWordDetector; wd = WakeWordDetector('/home/pi/porcupine/keywords/jarvis_linux.ppn'); print('Wake word detector ready')"
+python -c "from src.wake_word import WakeWordDetector; wd = WakeWordDetector('jarvis'); print('Wake word detector ready')"
 
 # Test STT
 python -c "from src.stt import SpeechToText; stt = SpeechToText(); print('STT ready')"

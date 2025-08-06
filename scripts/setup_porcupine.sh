@@ -1,5 +1,5 @@
 #!/bin/bash
-# Porcupine Setup Script for Raspberry Pi Voice Assistant
+# openWakeWord Setup Script for Raspberry Pi Voice Assistant
 # This script helps set up Porcupine wake word detection
 
 set -e  # Exit on any error

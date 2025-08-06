@@ -1,10 +1,10 @@
 # Configuration for Home Automation Voice Assistant
 
 # Wake word settings
-wake_word: "Jarvis"
-porcupine:
-  # Path to Porcupine keyword file for your wake word (e.g., Jarvis.ppn)
-  keyword_path: "/home/noahb/porcupine/keywords/jarvis_linux.ppn"
+wake_word: "jarvis"
+openwakeword:
+  # Wake word to detect (uses openWakeWord models)
+  wake_word: "jarvis"
   sensitivity: 0.5
   # Optional: Path to activation sound file (WAV or MP3)
   # Leave empty to use system beep tone

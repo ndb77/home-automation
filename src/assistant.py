@@ -34,12 +34,12 @@ class VoiceAssistant:
         # Initialise components
         # ------------------------------------------------------------------
         self.wake_detector = WakeWordDetector(
-            keyword_path=cfg["porcupine"]["keyword_path"],
-            sensitivity=cfg["porcupine"]["sensitivity"],
+            wake_word=cfg["openwakeword"]["wake_word"],
+            sensitivity=cfg["openwakeword"]["sensitivity"],
             rate=cfg["recording"]["rate"],
             channels=cfg["recording"]["channels"],
             chunk_size=cfg["recording"]["chunk_size"],
-            activation_sound=cfg["porcupine"].get("activation_sound", ""),
+            activation_sound=cfg["openwakeword"].get("activation_sound", ""),
             input_device=cfg["recording"].get("input_device", ""),
         )
 
@@ -162,7 +162,7 @@ class VoiceAssistant:
 
     def _play_startup_sound(self):
         """Play startup sound to indicate system is ready."""
-        startup_config = self.config.get('porcupine', {}).get('startup_sound', {})
+        startup_config = self.config.get('openwakeword', {}).get('startup_sound', {})
         if not startup_config.get('enabled', True):
             return
             
